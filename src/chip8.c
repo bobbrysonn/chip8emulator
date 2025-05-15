@@ -66,15 +66,17 @@ void chip8_cycle(chip8_t* chip8) {
         }
 
         /* JP addr: jump to location NNN */
-        case 0x1:
+        case 0x1: {
             chip8->pc = chip8->opcode & 0x0FFF;
             break;
+        }
 
-        case 0x2:
+        case 0x2: {
             chip8->stack[chip8->sp] = chip8->pc;
             chip8->sp++;
             chip8->pc = chip8->opcode & 0x0FFF;
             break;
+        }
 
         case 0x3: {
             const uint8_t x = (chip8->opcode & 0x0F00) >> 8;
@@ -125,6 +127,38 @@ void chip8_cycle(chip8_t* chip8) {
         }
 
         case 0x8: {
+            const uint8_t x = (chip8->opcode & 0x0F00) >> 8;
+            const uint8_t y = (chip8->opcode & 0x00F0) >> 4;
+            const uint8_t k = (chip8->opcode & 0x000F);
+
+            switch (k) {
+                case 0x0: {
+                    chip8->V[x] = chip8->V[y];
+                    break;
+                }
+
+                case 0x1: {
+                    chip8->V[x] |= chip8->V[y];
+                    break;
+                }
+
+                case 0x2: {
+                    chip8->V[x] &= chip8->V[y];
+                    break;
+                }
+
+                case 0x3: {
+                    chip8->V[x] ^= chip8->V[y];
+                    break;
+                }
+
+                default: {
+                    printf("Unknown opcode 0x%04X\n", chip8->opcode);
+                    break;
+                }
+            }
+
+            chip8_increment_pc(chip8);
             break;
         }
 
@@ -161,7 +195,7 @@ void chip8_init(chip8_t *chip8) {
 
     /* Set font set */
     for (int i = 0; i < FONT_SET_SIZE; i++) {
-        chip8->memory[i] = chip8_font_set[i];
+        chip8->memory[FONT_START_ADDRESS + 1] = chip8_font_set[i];
     }
 }
 

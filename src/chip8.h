@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #define FONT_SET_SIZE 80
+#define FONT_START_ADDRESS 0x050
 
 extern uint8_t chip8_font_set[FONT_SET_SIZE];
 
