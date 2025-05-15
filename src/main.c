@@ -45,7 +45,7 @@ int main() {
 }
 
 bool init() {
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
+    if (!(SDL_InitSubSystem(SDL_INIT_VIDEO))) {
         printf("SDL_InitSubSystem() failed: %s\n", SDL_GetError());
         return false;
     }

@@ -1,0 +1,17 @@
+{
+   "version": "0.2.0",
+   "configurations": [
+      {
+         "name": "Chip8Emulator",
+         "type": "cppdbg",
+         "request": "launch",
+         "program": "${workspaceFolder}/build/Chip8Emulator",
+         "args": [],
+         "stopAtEntry": false,
+         "cwd": "${workspaceFolder}",
+         "environment": [],
+         "externalConsole": false,
+         "MIMode": "lldb",
+      }
+   ]
+}
