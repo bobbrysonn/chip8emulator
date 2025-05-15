@@ -152,6 +152,37 @@ void chip8_cycle(chip8_t* chip8) {
                     break;
                 }
 
+                case 0x4: {
+                    uint16_t sum = chip8->V[x] + chip8->V[y];
+                    chip8->V[0xF] = (sum > 0xFF) ? 1 : 0;
+                    chip8->V[x] = sum & 0xFF;
+                    break;
+                }
+
+                case 0x5: {
+                    chip8->V[0xF] = (chip8->V[x] > chip8->V[y]) ? 1 : 0;
+                    chip8->V[x] -= chip8->V[y];
+                    break;
+                }
+
+                case 0x6: {
+                    chip8->V[0xF] = chip8->V[x] & 0x1;
+                    chip8->V[x] >>= 1;
+                    break;
+                }
+
+                case 0x7: {
+                    chip8->V[0xF] = (chip8->V[y] > chip8->V[x]) ? 1 : 0;
+                    chip8->V[x] = chip8->V[y] - chip8->V[x];
+                    break;
+                }
+
+                case 0xE: {
+                    chip8->V[0xF] = (chip8->V[x] & 0x80) >> 7;
+                    chip8->V[x] <<= 1;
+                    break;
+                }
+
                 default: {
                     printf("Unknown opcode 0x%04X\n", chip8->opcode);
                     break;
