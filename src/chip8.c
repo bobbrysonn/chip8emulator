@@ -74,14 +74,13 @@ void chip8_cycle(chip8_t *chip8)
     }
 
     case 0x2: {
-        chip8->stack[chip8->sp] = chip8->pc;
-
-        if (chip8->sp >= 15)
+        if (chip8->sp >= 16)
         {
             printf("Stack overflow\n");
             return;
         }
 
+        chip8->stack[chip8->sp] = chip8->pc;
         chip8->sp++;
         chip8->pc = chip8->opcode & 0x0FFF;
         break;
@@ -285,7 +284,7 @@ void chip8_cycle(chip8_t *chip8)
         switch (kk)
         {
         case 0x9E: {
-            if (chip8->key[chip8->V[x] & 0xF] != 1)
+            if (chip8->key[chip8->V[x] & 0xF] == 1)
             {
                 chip8_increment_pc(chip8);
             }
