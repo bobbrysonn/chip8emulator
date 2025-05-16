@@ -36,7 +36,8 @@ void chip8_clear_graphics(chip8_t *chip8) {
 }
 
 void chip8_cycle(chip8_t* chip8) {
-    /* Obtain the opcode stored over 2 bytes */
+    // printf("Current opcode: 0x%04X\n", (chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1]));
+
     chip8->opcode = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
 
     const uint16_t first = chip8->opcode >> 12;
@@ -44,20 +45,22 @@ void chip8_cycle(chip8_t* chip8) {
     switch (first) {
         case 0x0: {
             switch (chip8->opcode) {
-                /* CLS: Clear the display */
                 case 0x00E0:
                     chip8_clear_graphics(chip8);
                     break;
 
-                /* RET: Return from a subroutine */
                 case 0x00EE:
+                    if (chip8->sp == 0) {
+                        printf("Stack underflow\n");
+                        return;
+                    }
+
                     chip8->sp--;
                     chip8->pc = chip8->stack[chip8->sp];
-                    break;
+                    return;
 
                 default:
                     printf("Unknown opcode 0x%04X\n", chip8->opcode);
-                    chip8_increment_pc(chip8);
                     break;
             }
 
@@ -73,6 +76,12 @@ void chip8_cycle(chip8_t* chip8) {
 
         case 0x2: {
             chip8->stack[chip8->sp] = chip8->pc;
+
+            if (chip8->sp >= 15) {
+                printf("Stack overflow\n");
+                return;
+            }
+
             chip8->sp++;
             chip8->pc = chip8->opcode & 0x0FFF;
             break;
@@ -153,7 +162,7 @@ void chip8_cycle(chip8_t* chip8) {
                 }
 
                 case 0x4: {
-                    uint16_t sum = chip8->V[x] + chip8->V[y];
+                    const uint16_t sum = chip8->V[x] + chip8->V[y];
                     chip8->V[0xF] = (sum > 0xFF) ? 1 : 0;
                     chip8->V[x] = sum & 0xFF;
                     break;
@@ -205,6 +214,165 @@ void chip8_cycle(chip8_t* chip8) {
             break;
         }
 
+        case 0xA: {
+            chip8->I = chip8->opcode & 0x0FFF;
+            chip8_increment_pc(chip8);
+            break;
+        }
+
+        case 0xB: {
+            chip8->pc = (chip8->opcode & 0x0FFF) + (uint16_t)chip8->V[0];
+            break;
+        }
+
+        case 0xC: {
+            const uint8_t x = (chip8->opcode & 0x0F00) >> 8;
+            const uint8_t y = (uint8_t)rand() % 256; // NOLINT(cert-msc30-c, cert-msc50-cpp)
+
+            chip8->V[x] = y & (chip8->opcode & 0x00FF);
+
+            chip8_increment_pc(chip8);
+            break;
+        }
+
+        case 0xD: {
+            const uint8_t x = chip8->V[(chip8->opcode & 0x0F00) >> 8];
+            const uint8_t y = chip8->V[(chip8->opcode & 0x00F0) >> 4];
+            const uint8_t height = chip8->opcode & 0x000F;
+
+            chip8->V[0xF] = 0;
+
+            for (int row = 0; row < height; row++) {
+                const uint8_t pixel = chip8->memory[chip8->I + row];
+
+                for (int col = 0; col < 8; col++) {
+                    if ((pixel & (0x80 >> col)) != 0) {
+                        const uint16_t x_pos = (x + col) % 64;
+                        const uint16_t y_pos = (y + row) % 32;
+                        const uint16_t idx = x_pos + (y_pos * 64);
+
+                        if (chip8->gfx[idx] == 1) {
+                            chip8->V[0xF] = 1;
+                        }
+
+                        chip8->gfx[idx] ^= 1;
+                    }
+                }
+            }
+
+            chip8_increment_pc(chip8);
+            break;
+        }
+
+        case 0xE: {
+            const uint8_t x = (chip8->opcode & 0x0F00) >> 8;
+            const uint16_t kk = chip8->opcode & 0x00FF;
+
+            switch (kk) {
+                case 0x9E: {
+                    if (chip8->key[chip8->V[x] & 0xF] != 1) {
+                        chip8_increment_pc(chip8);
+                    }
+                    break;
+                }
+
+                case 0xA1: {
+                    if (chip8->key[chip8->V[x]] != 1) {
+                        chip8_increment_pc(chip8);
+                    }
+                    break;
+                }
+
+                default: {
+                    printf("Unknown opcode 0x%04X\n", chip8->opcode);
+                    chip8_increment_pc(chip8);
+                    break;
+                }
+            }
+
+            chip8_increment_pc(chip8);
+            break;
+        }
+
+        case 0xF: {
+            const uint8_t x = (chip8->opcode & 0x0F00) >> 8;
+            const uint16_t kk = chip8->opcode & 0x00FF;
+
+            switch (kk) {
+                case 0x07: {
+                    chip8->V[x] = chip8->timer_delay;
+                    break;
+                }
+
+                case 0x0A: {
+                    for (int i = 0; i < 16; i++) {
+                        if (chip8->key[i] != 0) {
+                            chip8->V[x] = i;
+
+                            chip8_increment_pc(chip8);
+
+                            return;
+                        }
+                    }
+
+                    return;
+                }
+
+                case 0x15: {
+                    chip8->timer_delay = chip8->V[x];
+                    break;
+                }
+
+                case 0x18: {
+                    chip8->timer_sound = chip8->V[x];
+                    break;
+                }
+
+                case 0x1E: {
+                    chip8->I += chip8->V[x];
+                    break;
+                }
+
+                case 0x29: {
+                    if (chip8->V[x] < 16) {
+                        chip8->I = FONT_START_ADDRESS + chip8->V[x] * 5;
+                    }
+                    break;
+                }
+
+                case 0x33: {
+                    const uint8_t value = chip8->V[x];
+                    chip8->memory[chip8->I]     = value / 100;
+                    chip8->memory[chip8->I + 1] = (value / 10) % 10;
+                    chip8->memory[chip8->I + 2] = value % 10;
+                    break;
+                }
+
+                case 0x55: {
+                    for (int i = 0; i <= x; i++) {
+                        chip8->memory[chip8->I + i] = chip8->V[i];
+                    }
+                    break;
+                }
+
+                case 0x65: {
+                    for (int i = 0; i <= x; i++) {
+                        chip8->V[i] = chip8->memory[chip8->I + i];
+                    }
+                    break;
+                }
+
+                default: {
+                    printf("Unknown opcode 0x%04X\n", chip8->opcode);
+                    chip8_increment_pc(chip8);
+                    break;
+                }
+            }
+
+            chip8_increment_pc(chip8);
+            break;
+        }
+
         default: {
             printf("Unknown opcode 0x%04X\n", chip8->opcode);
             chip8_increment_pc(chip8);
@@ -226,12 +394,33 @@ void chip8_init(chip8_t *chip8) {
 
     /* Set font set */
     for (int i = 0; i < FONT_SET_SIZE; i++) {
-        chip8->memory[FONT_START_ADDRESS + 1] = chip8_font_set[i];
+        chip8->memory[FONT_START_ADDRESS + i] = chip8_font_set[i];
     }
 }
 
-void chip8_load_rom(chip8_t* chip8, const char* filename) {
+bool chip8_load_rom(chip8_t* chip8, const char* filename) {
+    FILE* fp = fopen(filename, "rb");
+    if (fp == nullptr) {
+        printf("Failed to open file %s\n", filename);
+        return false;
+    }
 
+    int i = 0;
+    uint8_t byte;
+    while (fread(&byte, 1, 1, fp) == 1) {
+        if (i + 0x200 >= 4096) {
+            printf("Rom file is too large\n");
+            fclose(fp);
+            return false;
+        }
+        chip8->memory[i + 0x200] = byte;
+
+        i += 1;
+    }
+
+    fclose(fp);
+
+    return true;
 }
 
 static unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
