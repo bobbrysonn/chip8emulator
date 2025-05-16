@@ -44,7 +44,7 @@ int main(const int argc, char *argv[])
             case SDL_EVENT_KEY_UP: {
                 bool isDown = (event.type == SDL_EVENT_KEY_DOWN);
 
-                switch (event.key.scancode)
+                switch (event.key.key)
                 {
                 // row 1
                 case SDLK_1:
@@ -60,7 +60,7 @@ int main(const int argc, char *argv[])
                     cpu->key[0xC] = isDown;
                     break;
 
-                    // row 2
+                // row 2
                 case SDLK_Q:
                     cpu->key[0x4] = isDown;
                     break;
@@ -74,7 +74,7 @@ int main(const int argc, char *argv[])
                     cpu->key[0xD] = isDown;
                     break;
 
-                    // row 3
+                // row 3
                 case SDLK_A:
                     cpu->key[0x7] = isDown;
                     break;
@@ -88,7 +88,7 @@ int main(const int argc, char *argv[])
                     cpu->key[0xE] = isDown;
                     break;
 
-                    // row 4
+                // row 4
                 case SDLK_Z:
                     cpu->key[0xA] = isDown;
                     break;
@@ -102,7 +102,6 @@ int main(const int argc, char *argv[])
                     cpu->key[0xF] = isDown;
                     break;
 
-                    // optional: exit on ESC
                 case SDLK_ESCAPE:
                     quit = true;
                     break;
@@ -148,7 +147,7 @@ int main(const int argc, char *argv[])
         SDL_RenderTexture(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(1);
+        SDL_Delay(1000 / 600);
     }
 
     deInit();
@@ -178,7 +177,7 @@ bool init(const char *filename)
         return false;
     }
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, 0, 64, 32);
     if (texture == NULL)
     {
         printf("SDL_CreateTexture() failed: %s\n", SDL_GetError());

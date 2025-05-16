@@ -13,7 +13,8 @@
 
 extern uint8_t chip8_font_set[FONT_SET_SIZE];
 
-typedef struct {
+typedef struct
+{
     uint8_t gfx[64 * 32];
     uint8_t key[16];
     uint8_t memory[4096];
@@ -27,7 +28,6 @@ typedef struct {
     uint16_t stack[16];
 } chip8_t;
 
-
 void chip8_clear_graphics(chip8_t *chip8);
 void chip8_cycle(chip8_t *chip8);
 
@@ -38,6 +38,6 @@ void chip8_cycle(chip8_t *chip8);
  */
 void chip8_increment_pc(chip8_t *chip8);
 void chip8_init(chip8_t *chip8);
-bool chip8_load_rom(chip8_t* chip8, const char* filename);
+bool chip8_load_rom(chip8_t *chip8, const char *filename);
 
-#endif //CHIP8_H
+#endif // CHIP8_H

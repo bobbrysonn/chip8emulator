@@ -3,9 +3,9 @@
 //
 
 #include "chip8.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <time.h>
 
 uint8_t chip8_font_set[FONT_SET_SIZE] = {
@@ -293,7 +293,7 @@ void chip8_cycle(chip8_t *chip8)
         }
 
         case 0xA1: {
-            if (chip8->key[chip8->V[x]] != 1)
+            if (chip8->key[chip8->V[x] & 0xF] != 1)
             {
                 chip8_increment_pc(chip8);
             }
@@ -443,8 +443,8 @@ bool chip8_load_rom(chip8_t *chip8, const char *filename)
             fclose(fp);
             return false;
         }
-        chip8->memory[i + 0x200] = byte;
 
+        chip8->memory[i + 0x200] = byte;
         i += 1;
     }
 
