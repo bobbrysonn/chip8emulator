@@ -15,6 +15,7 @@ extern uint8_t chip8_font_set[FONT_SET_SIZE];
 
 typedef struct
 {
+    bool draw_flag;
     uint8_t gfx[64 * 32];
     uint8_t key[16];
     uint8_t memory[4096];
